@@ -1,53 +1,104 @@
 function eval() {
-    // Do not use eval!!!
-    return;
+  // Do not use eval!!!
+  return;
 }
 
 function expressionCalculator(expr) {
-    let ops = {
-        '+': 1, 
-        '-': 1, 
-        '*': 2, 
-        '/': 2
-    };
-    let peek = (a) => a[a.length - 1];
-    let stack = [];
-    let polish;
+  expr = expr.replace(/ /g, "").replace(/\+/g, ",+,").replace(/-/g, ",-,").replace(/\//g, ",/,").replace(/\*/g, ",*,").replace(/\(/g, ",(,").replace(/\)/g, ",),");
+  var exprArr = expr.split(",");
 
-    polish = expr.split('').reduce((output, token) => {
+  if (expr.split('(').length != expr.split(')').length) throw new Error('ExpressionError: Brackets must be paired');
 
-      if (parseFloat(token)) {
-        output.push(token);
-      }
+  let stack = [];
+  let postfixExpr = [];
 
-      if (token in ops) {
-        while (peek(stack) in ops && ops[token] <= ops[peek(stack)])
-          output.push(stack.pop());
-        stack.push(token);
-      }
+  exprArr.forEach(function(el, index, array) {
+    switch (el) {
+      case "":
+          break;
+      case "(":
+        stack.push(el)
+        break;
+      case ")":
+        while (true) {
+          if (stack.length === 0) {
+            break;
+          }
+          let s = stack.pop()
+          if (s === "(") {
+            break;
+          }
+          postfixExpr.push(s)
+        }
+        break;
+        case "+":
+        case "-":
+        case "*":
+        case "/":
 
-      if (token == '(') {
-        stack.push(token);
-      }
-
-      if (token == ')') {
-        while (peek(stack) != '(')
-          output.push(stack.pop());
-        stack.pop();
-      }
-
-      return output;
-    }, []).concat(stack.reverse()).join(' ');
-
-    let rpn = (ts, s = []) => {
-        ts.split(' ').forEach(t =>
-        s.push(t == +t ? t : eval(s.splice(-2,1)[0] + t + s.pop())));
-        return s[0];
+        while (true) {
+          if (stack.length === 0 || stack[stack.length - 1] === "(") {
+            break;
+          }
+          if (el === "/" && (stack[stack.length - 1] === "*" || stack[stack.length - 1] === "+" || stack[stack.length - 1] === "-") ) {
+              break;
+            }
+            if (el === "*" && (stack[stack.length - 1] === "+" || stack[stack.length - 1] === "-") ) {
+              break;
+            }
+          let s = stack.pop()
+          postfixExpr.push(s)
+        }
+        stack.push(el)
+        break;
+      default:
+        postfixExpr.push(el)
     }
+  });
 
-    return rpn(polish);
+  while (true) {
+    if (stack.length === 0) {
+      break;
+    }
+    s = stack.pop()
+    postfixExpr.push(s)
+  }
+
+
+  postfixExpr.forEach(function(el, index, array) {
+
+    if (el == "+" || el == "-" || el == "*" || el == "/") {
+      let el1 = +stack.pop();
+      let el2 = +stack.pop();
+      var result
+      switch (el) {
+        case "+":
+          result = el1 + el2;
+          break;
+        case "-":
+          result = el2 - el1;
+          break;
+        case "*":
+          result = el1 * el2;
+          break;
+        case "/":
+          if (el1 === 0) {
+            throw "TypeError: Division by zero.";
+          }
+          result = el2 / el1;
+          break;
+        default:
+          break;
+      }
+      stack.push(String(result))
+    } else {
+      stack.push(el)
+    }
+  });
+  return +stack.pop()
 }
 
+
 module.exports = {
-    expressionCalculator
+  expressionCalculator
 }
